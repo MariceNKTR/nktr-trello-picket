@@ -1,13 +1,14 @@
-
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NKTR PICKET</title>
-</head>
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NKTR PICKET</title></head>
 <body>
-  <h1>NKTR PICKET</h1>
-  <p>Power-Up in ontwikkeling.</p>
-</body>
-</html>
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<script>
+window.TrelloPowerUp.initialize({
+  'board-buttons': function(t) {
+    return [{text: '+ MELDING', condition: 'edit', callback: function(t) {
+      return t.modal({url:'./melding.html', title:'Nieuwe melding', height:650, fullscreen:false});
+    }}];
+  }
+});
+</script>
+</body></html>
