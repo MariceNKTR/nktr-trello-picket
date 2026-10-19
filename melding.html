@@ -32,24 +32,27 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #validation{font-size:13px;line-height:1.5;white-space:pre-line;margin-top:10px;min-height:18px;color:var(--fg)}
 #validation.error{color:#db4e43}
 #validation.ok{color:#12785c}
+#matches{display:flex;flex-direction:column;gap:5px}
+#matches button{font-weight:500;text-align:left;background:var(--field);color:var(--fg);padding:8px 10px}
+#matches .selected{outline:2px solid #2278d7}
 @media(max-width:630px){body{padding:14px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
 </style>
 </head>
 <body>
 <h1>Nieuwe melding</h1>
 <p>NKTR PICKET · Personeelsmelding registreren</p>
-<div class="note" role="status"><strong>Testversie.</strong> Je kunt de velden invullen en controleren. <strong>Opslaan is nog uitgeschakeld</strong> totdat de beveiligde Cloudflare-koppeling klaar is. Er worden geen gegevens verstuurd.</div>
+<div class="note" role="status" id="connection">Beveiligde verbinding met PICKET wordt gecontroleerd…</div>
 <form id="incident" novalidate>
 <div class="grid">
   <div class="field wide">
     <label for="employee">Naam medewerker *</label>
     <input id="employee" name="employee" maxlength="80" placeholder="Voor- en achternaam" autocomplete="off" required>
-    <small>Mogelijke dubbele namen (alleen PICKET, inclusief archief) worden in een volgende versie getoond.</small>
+    <small>Bij een bestaande naam kun je een eerdere melding selecteren. Alleen PICKET, inclusief archief.</small><div id="matches" aria-live="polite"></div>
   </div>
   <div class="field">
     <label for="company">Bedrijf *</label>
-    <select id="company" name="company" disabled required><option value="">Bedrijven koppelen we via Cloudflare</option></select>
-    <small>De bedrijvenlijst wordt later automatisch gevuld.</small>
+    <select id="company" name="company" disabled required><option value="">Bedrijven laden…</option></select>
+    <small>Afkomstig uit de actieve NKTR Onboarding-sjablonen.</small>
   </div>
   <div class="field">
     <label for="type">Type melding *</label>
@@ -105,13 +108,20 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div id="validation" role="status" aria-live="polite"></div>
 <div class="controls">
   <button type="button" class="secondary" id="validate">CONTROLEER MELDING</button>
-  <button type="submit" id="submit" disabled title="Beschikbaar na beveiligde backendkoppeling">MELDING OPSLAAN</button>
+  <button type="submit" id="submit" disabled>MELDING OPSLAAN</button>
 </div>
 </form>
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script>
 (function () {
   'use strict';
   const byId = id => document.getElementById(id);
+  const t = window.TrelloPowerUp.iframe();
+  const backend = 'https://nktr-picket.marice-angulo.workers.dev';
+  const submissionId = crypto.randomUUID();
+  let connected = false;
+  let relatedCardId = '';
+  let debounceTimer;
   const pad = n => String(n).padStart(2, '0');
   const now = new Date();
   byId('date').value = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-');
@@ -187,6 +197,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     const errors = [];
     const employee = byId('employee').value.trim();
     if (employee.length < 2) errors.push('Vul de naam van de medewerker in.');
+    if (!byId('company').value) errors.push('Kies een bedrijf.');
     if (!byId('type').value) errors.push('Kies het type melding.');
     if (!byId('date').value) errors.push('Vul de datum van de dienst in.');
     if (!byId('replacement').value) errors.push('Geef aan of vervanging nodig is.');
@@ -201,22 +212,100 @@ button:disabled{opacity:.45;cursor:not-allowed}
       else if (!isValidTelephone(byId('phone').value)) errors.push('Controleer het telefoonnummer (Nederlands of internationaal formaat).');
     }
     if (!byId('returnUnknown').checked && !byId('returnDate').value) errors.push('Vul de verwachte terugkeer in of kies Onbekend.');
-    // Bedrijf is intentionally unavailable in this preview; it is still required in production.
     const validation = byId('validation');
     validation.className = errors.length ? 'error' : 'ok';
     validation.textContent = errors.length ? errors.map(e => '• ' + e).join('\n')
-      : 'Invoervelden gecontroleerd. Bedrijf wordt gekoppeld in de volgende fase. Opslaan is nog niet beschikbaar.';
+      : 'Invoervelden gecontroleerd. Klaar om te registreren.';
     return errors.length === 0;
   }
 
+  async function api(path, action, body = {}) {
+    const jwt = await t.jwt({state: JSON.stringify({action})});
+    const response = await fetch(backend + path, {
+      method:'POST',
+      headers: {'Authorization': 'Bearer ' + jwt, 'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(25000)
+    });
+    const result = await response.json();
+    if(!response.ok) throw new Error(result.error || 'Verbinding met PICKET mislukt');
+    return result;
+  }
+  async function bootstrap() {
+    try {
+      const result = await api('/api/bootstrap','picket-bootstrap');
+      const companies = result.companies || [];
+      if (!companies.length) throw new Error('Geen actieve bedrijven gevonden');
+      byId('company').replaceChildren(new Option('Bedrijf kiezen',''));
+      for (const name of companies) byId('company').add(new Option(name,name));
+      byId('company').disabled = false;
+      connected = true;
+      byId('submit').disabled = false;
+      byId('connection').textContent = 'PICKET is verbonden. Meldingen worden rechtstreeks op het PICKET-bord geregistreerd.';
+    } catch(error) {
+      connected = false;
+      byId('connection').textContent = 'Nog niet verbonden: ' + (error.message||error) + '. Opslaan blijft uitgeschakeld.';
+    }
+  }
+  async function searchMatches() {
+    const employee=byId('employee').value.trim();
+    const host=byId('matches'); host.replaceChildren();
+    if(!connected || employee.length<3) return;
+    try {
+      const result = await api('/api/matches','picket-matches',{employee});
+      for(const match of (result.matches||[])) {
+        const button=document.createElement('button');
+        button.type='button';
+        button.textContent = match.name + (match.archived?' · archief':' · actief');
+        button.addEventListener('click',()=>{
+          byId('employee').value=match.name;
+          relatedCardId=match.id;
+          for(const other of host.children) other.classList.remove('selected');
+          button.classList.add('selected');
+        });
+        host.appendChild(button);
+      }
+    } catch(error) { console.warn('Naamcontrole niet beschikbaar',error); }
+  }
+  byId('employee').addEventListener('input', ()=>{
+    relatedCardId='';
+    clearTimeout(debounceTimer);
+    debounceTimer=setTimeout(searchMatches,650);
+  });
   byId('date').addEventListener('change', renderDuration);
   byId('validate').addEventListener('click', validate);
-  byId('incident').addEventListener('submit', event => {
+  byId('incident').addEventListener('submit', async event => {
     event.preventDefault();
-    byId('validation').className = 'error';
-    byId('validation').textContent = 'Opslaan is nog niet mogelijk: de beveiligde backend moet eerst worden gekoppeld.';
+    if(!connected || !validate()) return;
+    const shift = calculateShift();
+    const payload = {
+      submissionId, employee:byId('employee').value.trim(),
+      relatedCardId, company:byId('company').value,
+      type:byId('type').value, date:byId('date').value,
+      replacement:byId('replacement').value,
+      start:shift.start||'Onbekend', end:shift.end||'Onbekend',
+      explanation:byId('explanation').value.trim(),
+      phone:byId('phoneUnknown').checked?'Onbekend':byId('phone').value.trim(),
+      returnDate:byId('returnUnknown').checked?'Onbekend':byId('returnDate').value
+    };
+    byId('submit').disabled = true;
+    byId('validation').textContent = 'Melding registreren…';
+    try {
+      const result = await api('/api/submit','picket-submit',payload);
+      byId('validation').className = 'ok';
+      byId('validation').textContent = 'Melding geregistreerd (' + result.status + ').';
+      byId('validate').disabled = true;
+      await t.alert({message:'Melding opgeslagen in MELDINGEN | OPEN'});
+      // Avoid double-submission of sensitive personnel data.
+      setTimeout(() => t.closeModal(), 900);
+    } catch(error) {
+      byId('validation').className = 'error';
+      byId('validation').textContent = 'Opslaan niet bevestigd: ' + (error.message||error) + '. Controleer het PICKET-bord voordat je opnieuw probeert.';
+      byId('submit').disabled = false;
+    }
   });
   renderDuration();
+  bootstrap();
 })();
 </script>
 </body>
