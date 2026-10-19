@@ -1,14 +1,34 @@
 <!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NKTR PICKET</title></head>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NKTR PICKET</title>
+</head>
 <body>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script>
-window.TrelloPowerUp.initialize({
-  'board-buttons': function(t) {
-    return [{text: '+ MELDING', condition: 'edit', callback: function(t) {
-      return t.modal({url:'./melding.html', title:'Nieuwe melding', height:650, fullscreen:false});
-    }}];
-  }
-});
+  // PICKET v1.2: desktop form entry point. No credential or incident data is stored here.
+  window.TrelloPowerUp.initialize({
+    'board-buttons': function(t) {
+      return [{
+        icon: {
+          dark: 'https://maricenktr.github.io/nktr-trello-picket/icon-white.svg',
+          light: 'https://maricenktr.github.io/nktr-trello-picket/icon-dark.svg'
+        },
+        text: '+ MELDING',
+        condition: 'edit',
+        callback: function(t) {
+          return t.modal({
+            url: './melding.html',
+            title: 'Nieuwe melding',
+            height: 760,
+            fullscreen: false
+          });
+        }
+      }];
+    }
+  });
 </script>
-</body></html>
+</body>
+</html>
