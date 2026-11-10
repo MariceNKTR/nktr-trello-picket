@@ -1,0 +1,17 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKET | Actie</title><link rel="stylesheet" href="./style.css"></head><body>
+<h1 id="title">Melding behandelen</h1><p id="subject">Kaart laden…</p><div class="notice" id="current">Status controleren…</div>
+<div id="claimBox" hidden><p>Je wordt automatisch toegewezen als verantwoordelijke manager.</p><button id="claim">IN BEHANDELING NEMEN</button></div>
+<div id="closeBox" hidden><label for="note">Afsluitnotitie * (10–500 tekens)</label><textarea id="note" maxlength="500" placeholder="Beschrijf kort welke actie is ondernomen en hoe de melding is afgehandeld. Geen medische diagnoses."></textarea><div class="actions"><button id="close">AFHANDELEN</button></div></div>
+<div class="notice" id="message" role="status"></div>
+<script src="https://p.trellocdn.com/power-up.min.js"></script><script src="./common.js"></script><script>
+(async()=>{const t=window.TrelloPowerUp.iframe(),$=id=>document.getElementById(id);const mode=new URLSearchParams(location.search).get('mode');if(!['claim','close'].includes(mode)){$('message').textContent='Ongeldige actie';return}
+const card=await t.card('id','name');Picket.text('subject',card.name);Picket.text('title',mode==='claim'?'In behandeling nemen':'Melding afhandelen');let state;
+try{state=await Picket.call(t,'/api/card-status','picket-card-status',{cardId:card.id});Picket.text('current','Status: '+state.status+(state.owner_name?' · '+state.owner_name:''));
+ if(mode==='claim'){$('claimBox').hidden=state.status!=='OPEN'&&state.status!=='IN BEHANDELING'}else{$('closeBox').hidden=state.status!=='IN BEHANDELING'}
+ if(state.status==='AFGEHANDELD')Picket.text('message','Deze melding is al afgehandeld.');if(mode==='close'&&state.status==='OPEN')Picket.text('message','Neem de melding eerst in behandeling.');
+}catch(e){Picket.text('message','Actie niet beschikbaar: '+e.message);return}
+async function act(path,action,data,button){button.disabled=true;Picket.text('message','Verwerken…');try{const res=await Picket.call(t,path,action,{cardId:card.id,...data});Picket.text('message','Opgeslagen: '+res.status);await t.alert({message:'PICKET status bijgewerkt'});await t.closeModal()}catch(e){Picket.text('message','Niet bevestigd: '+e.message+' Controleer kaart vóór opnieuw proberen.');button.disabled=false}}
+$('claim').addEventListener('click',()=>act('/api/claim','picket-claim',{},$('claim')));
+$('close').addEventListener('click',()=>{const note=$('note').value.trim();if(note.length<10||note.length>500){Picket.text('message','Afsluitnotitie moet 10–500 tekens bevatten.');return}act('/api/close','picket-close',{note},$('close'))});
+})();
+</script></body></html>

@@ -1,34 +1,25 @@
-<!doctype html>
-<html lang="nl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>NKTR PICKET</title>
-</head>
-<body>
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>NKTR PICKET Power-Up</title></head><body>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script>
-  // PICKET v1.2: desktop form entry point. No credential or incident data is stored here.
-  window.TrelloPowerUp.initialize({
-    'board-buttons': function(t) {
-      return [{
-        icon: {
-          dark: 'https://maricenktr.github.io/nktr-trello-picket/icon-white.svg',
-          light: 'https://maricenktr.github.io/nktr-trello-picket/icon-dark.svg'
-        },
-        text: '+ MELDING',
-        condition: 'edit',
-        callback: function(t) {
-          return t.modal({
-            url: './melding.html',
-            title: 'Nieuwe melding',
-            height: 760,
-            fullscreen: false
-          });
-        }
-      }];
-    }
-  });
-</script>
-</body>
-</html>
+'use strict';
+// Connector page. Enable board-buttons and card-buttons for this Power-Up in Trello admin.
+const light='./icon-light.svg',dark='./icon-dark.svg',icon='./icon-gray.svg';
+window.TrelloPowerUp.initialize({
+  'board-buttons': function(t){
+    return [
+      {text:'+ MELDING',icon:{dark,light},condition:'edit',callback:()=>t.modal({url:'./melding.html',height:690,fullscreen:false,title:'Nieuwe melding'})},
+      {text:'INZICHTEN',icon:{dark,light},condition:'edit',callback:()=>t.modal({url:'./dashboard.html',height:770,fullscreen:true,title:'PICKET | Inzichten'})}
+    ];
+  },
+  'card-buttons': function(t){
+    if(!t.memberCanWriteToModel('card'))return [];
+    return t.card('name').then(({name})=>{
+      if(/^(?:🔒|──|↓↓)/.test(name||'')||name==='MELDING MAKEN')return [];
+      return [
+        {text:'In behandeling nemen',icon,condition:'edit',callback:()=>t.modal({url:'./status.html?mode=claim',height:465,title:'In behandeling nemen'})},
+        {text:'Afhandelen',icon,condition:'edit',callback:()=>t.modal({url:'./status.html?mode=close',height:570,title:'Melding afhandelen'})}
+      ];
+    });
+  }
+});
+</script></body></html>

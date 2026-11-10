@@ -1,0 +1,17 @@
+:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color-scheme:light dark}
+*{box-sizing:border-box}
+body{--bg:#fff;--fg:#172b4d;--surface:#f3f5f8;--line:#c1c7d0;--muted:#626f86;--accent:#0b5ad1;margin:0 auto;max-width:1060px;padding:22px;color:var(--fg);background:var(--bg);font-size:14px}
+@media(prefers-color-scheme:dark){body{--bg:#22272b;--fg:#f2f4f8;--surface:#303841;--line:#596474;--muted:#b4bcc8;--accent:#84b7ff}}
+h1{font-size:24px;margin:0 0 6px}h2{font-size:17px}p,small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}.wide{grid-column:1/-1}
+label{font-weight:650}input,select,textarea{width:100%;padding:10px;font:inherit;background:var(--bg);border:1px solid var(--line);color:var(--fg);border-radius:7px}
+textarea{min-height:85px;resize:vertical}input:disabled,select:disabled,button:disabled{opacity:.5}
+.notice{padding:12px;border-radius:7px;background:var(--surface);margin:14px 0}.error{color:#cf3838}.success{color:#168a64}
+button{font:inherit;background:var(--fg);color:var(--bg);padding:10px 13px;border:1px solid var(--line);border-radius:7px;cursor:pointer;font-weight:650}
+button.secondary{background:var(--bg);color:var(--fg)}button.link{background:transparent;color:var(--accent);border:0;padding:6px 0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.metric{padding:16px;background:var(--surface);border-radius:9px}.metric strong{display:block;font-size:30px}.metric span{color:var(--muted)}
+.table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--line);text-align:left;padding:10px 6px}.table th{color:var(--muted);font-size:12px}
+.pill{padding:4px 9px;background:var(--surface);border-radius:50px;display:inline-block}a{color:var(--accent)}
+@media(max-width:620px){body{padding:14px}.grid,.metrics{grid-template-columns:1fr}.wide{grid-column:auto}}

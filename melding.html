@@ -1,312 +1,38 @@
-<!doctype html>
-<html lang="nl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nieuwe melding | NKTR PICKET</title>
-<style>
-:root {color-scheme:light dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-*{box-sizing:border-box}
-body{--bg:#fff;--fg:#172b4d;--field:#fafbfc;--line:#c1c7d0;--muted:#626f86;--notice:#f3f5f8;max-width:900px;margin:0 auto;padding:20px;color:var(--fg);background:var(--bg)}
-@media(prefers-color-scheme:dark){body{--bg:#22272b;--fg:#f1f2f4;--field:#2c333a;--line:#596474;--muted:#aeb7c4;--notice:#303841}}
-h1{font-size:21px;margin:0 0 5px}
-p{margin:0 0 16px;color:var(--muted);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
-.field{display:flex;flex-direction:column;gap:6px;min-width:0}
-.wide{grid-column:1/-1}
-label{font-size:13px;font-weight:650}
-input,select,textarea{width:100%;min-width:0;font:inherit;font-size:14px;padding:10px;border:1px solid var(--line);border-radius:7px;color:var(--fg);background:var(--field)}
-textarea{resize:vertical;min-height:76px}
-input:disabled,select:disabled{opacity:.55}
-small{color:var(--muted);font-size:12px}
-.note{background:var(--notice);border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin:12px 0 19px;font-size:13px;line-height:1.45}
-.unknown{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:450;min-height:27px}
-.unknown input{width:17px;height:17px;flex-shrink:0}
-.time-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
-.time-row span{font-weight:800}
-.duration{padding:8px 10px;background:var(--notice);border-radius:6px;font-size:13px;color:var(--muted)}
-.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
-button{border:1px solid var(--line);border-radius:6px;padding:11px 15px;background:var(--fg);color:var(--bg);font:inherit;font-size:13px;font-weight:750;cursor:pointer}
-button.secondary{background:var(--field);color:var(--fg)}
-button:disabled{opacity:.45;cursor:not-allowed}
-#validation{font-size:13px;line-height:1.5;white-space:pre-line;margin-top:10px;min-height:18px;color:var(--fg)}
-#validation.error{color:#db4e43}
-#validation.ok{color:#12785c}
-#matches{display:flex;flex-direction:column;gap:5px}
-#matches button{font-weight:500;text-align:left;background:var(--field);color:var(--fg);padding:8px 10px}
-#matches .selected{outline:2px solid #2278d7}
-@media(max-width:630px){body{padding:14px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}}
-</style>
-</head>
-<body>
-<h1>Nieuwe melding</h1>
-<p>NKTR PICKET · Personeelsmelding registreren</p>
-<div class="note" role="status" id="connection">Beveiligde verbinding met PICKET wordt gecontroleerd…</div>
-<form id="incident" novalidate>
-<div class="grid">
-  <div class="field wide">
-    <label for="employee">Naam medewerker *</label>
-    <input id="employee" name="employee" maxlength="80" placeholder="Voor- en achternaam" autocomplete="off" required>
-    <small>Bij een bestaande naam kun je een eerdere melding selecteren. Alleen PICKET, inclusief archief.</small><div id="matches" aria-live="polite"></div>
-  </div>
-  <div class="field">
-    <label for="company">Bedrijf *</label>
-    <select id="company" name="company" disabled required><option value="">Bedrijven laden…</option></select>
-    <small>Afkomstig uit de actieve NKTR Onboarding-sjablonen.</small>
-  </div>
-  <div class="field">
-    <label for="type">Type melding *</label>
-    <select id="type" name="type" required>
-      <option value="">Kies type melding</option>
-      <option>Ziek</option><option>Te laat</option><option>No-show</option>
-      <option>Niet beschikbaar</option><option>Ongeval</option><option>Noodgeval</option><option>Overig</option>
-    </select>
-  </div>
-  <div class="field">
-    <label for="date">Datum dienst *</label>
-    <input type="date" id="date" name="date" required>
-  </div>
-  <div class="field">
-    <label for="replacement">Vervanging nodig? *</label>
-    <select id="replacement" name="replacement" required>
-      <option value="">Kies Ja of Nee</option><option value="ja">Ja</option><option value="nee">Nee</option>
-    </select>
-  </div>
-  <div class="field">
-    <label>Begin dienst (24-uursnotatie) *</label>
-    <label class="unknown"><input type="checkbox" id="startUnknown"> Onbekend</label>
-    <div class="time-row"><select id="startHour" aria-label="Begin dienst: uur"></select><span>:</span><select id="startMinute" aria-label="Begin dienst: minuten"></select></div>
-    <small>Vul uur en minuten in óf kies Onbekend.</small>
-  </div>
-  <div class="field">
-    <label>Einde dienst (24-uursnotatie) *</label>
-    <label class="unknown"><input type="checkbox" id="endUnknown"> Onbekend</label>
-    <div class="time-row"><select id="endHour" aria-label="Einde dienst: uur"></select><span>:</span><select id="endMinute" aria-label="Einde dienst: minuten"></select></div>
-    <small>Vul uur en minuten in óf kies Onbekend.</small>
-  </div>
-  <div class="field wide">
-    <div id="duration" class="duration" aria-live="polite">Diensttijd nog niet volledig ingevuld.</div>
-  </div>
-  <div class="field wide">
-    <label for="explanation">Toelichting * (10–250 tekens)</label>
-    <textarea id="explanation" name="explanation" minlength="10" maxlength="250" required placeholder="Beschrijf kort wat er is gebeurd of waarom de medewerker niet beschikbaar is."></textarea>
-    <small>Houd het zakelijk. Noteer geen diagnoses of andere medische details. <span id="counter">0/250</span></small>
-  </div>
-  <div class="field">
-    <label for="phone">Telefoonnummer *</label>
-    <label class="unknown"><input type="checkbox" id="phoneUnknown"> Onbekend</label>
-    <input id="phone" name="phone" type="tel" inputmode="tel" maxlength="30" placeholder="06 12345678 of +31 6 12345678">
-    <small>Formaat wordt gecontroleerd, niet of het nummer bereikbaar is.</small>
-  </div>
-  <div class="field">
-    <label for="returnDate">Verwachte terugkeer *</label>
-    <label class="unknown"><input type="checkbox" id="returnUnknown"> Onbekend</label>
-    <input id="returnDate" name="returnDate" type="date">
-    <small>Kies een datum of Onbekend.</small>
-  </div>
-</div>
-<div id="validation" role="status" aria-live="polite"></div>
-<div class="controls">
-  <button type="button" class="secondary" id="validate">CONTROLEER MELDING</button>
-  <button type="submit" id="submit" disabled>MELDING OPSLAAN</button>
-</div>
-</form>
-<script src="https://p.trellocdn.com/power-up.min.js"></script>
-<script>
-(function () {
-  'use strict';
-  const byId = id => document.getElementById(id);
-  const t = window.TrelloPowerUp.iframe();
-  const backend = 'https://nktr-picket.marice-angulo.workers.dev';
-  const submissionId = crypto.randomUUID();
-  let connected = false;
-  let relatedCardId = '';
-  let debounceTimer;
-  const pad = n => String(n).padStart(2, '0');
-  const now = new Date();
-  byId('date').value = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-');
-
-  for (const part of ['start', 'end']) {
-    const hours = byId(part + 'Hour');
-    const minutes = byId(part + 'Minute');
-    hours.add(new Option('Uur', ''));
-    minutes.add(new Option('Min', ''));
-    for (let i = 0; i < 24; i++) hours.add(new Option(pad(i), pad(i)));
-    for (let i = 0; i < 60; i++) minutes.add(new Option(pad(i), pad(i)));
-    byId(part + 'Unknown').addEventListener('change', function () {
-      const disabled = this.checked;
-      hours.disabled = disabled;
-      minutes.disabled = disabled;
-      if (disabled) { hours.value = ''; minutes.value = ''; }
-      renderDuration();
-    });
-    hours.addEventListener('change', renderDuration);
-    minutes.addEventListener('change', renderDuration);
-  }
-
-  function requireTimeOrUnknown(part) {
-    if (byId(part + 'Unknown').checked) return { known: false, value: null };
-    const hour = byId(part + 'Hour').value;
-    const minute = byId(part + 'Minute').value;
-    if (hour === '' || minute === '') return { error: 'Vul begin- en eindtijd volledig in of kies Onbekend.' };
-    return { known: true, value: hour + ':' + minute, minutes: Number(hour) * 60 + Number(minute) };
-  }
-
-  function calculateShift() {
-    const start = requireTimeOrUnknown('start');
-    const end = requireTimeOrUnknown('end');
-    if (start.error || end.error) return { error: start.error || end.error };
-    if (!start.known || !end.known) return { valid: true, unknown: true, start: start.value, end: end.value };
-    if (start.minutes === end.minutes) return { error: 'Begin- en eindtijd mogen niet gelijk zijn (diensten duren minder dan 24 uur).' };
-    const overnight = end.minutes < start.minutes;
-    const minutes = (end.minutes - start.minutes + 1440) % 1440;
-    return { valid: true, unknown: false, overnight, minutes, start: start.value, end: end.value };
-  }
-
-  function renderDuration() {
-    const shift = calculateShift();
-    byId('duration').textContent = shift.error ? shift.error : shift.unknown
-      ? 'Eén of beide diensttijden onbekend: geen duur berekend.'
-      : `${Math.floor(shift.minutes / 60)} uur ${pad(shift.minutes % 60)} min${shift.overnight ? ' · eindigt de volgende dag' : ''}`;
-  }
-
-  for (const key of ['phone', 'return']) {
-    byId(key + 'Unknown').addEventListener('change', function () {
-      const field = byId(key === 'phone' ? 'phone' : 'returnDate');
-      field.disabled = this.checked;
-      if (this.checked) field.value = '';
-    });
-  }
-
-  byId('explanation').addEventListener('input', function () {
-    byId('counter').textContent = `${this.value.length}/250`;
-  });
-
-  function isValidTelephone(raw) {
-    const value = raw.trim();
-    if (!/^\+?[0-9 ()-]+$/.test(value) || (value.match(/\+/g) || []).length > 1) return false;
-    const digits = value.replace(/\D/g, '');
-    if (value.startsWith('+')) {
-      if (digits.startsWith('31')) return digits.length === 11;
-      return digits.length >= 8 && digits.length <= 15;
-    }
-    return /^0[0-9]{9}$/.test(digits);
-  }
-
-  function validate() {
-    const errors = [];
-    const employee = byId('employee').value.trim();
-    if (employee.length < 2) errors.push('Vul de naam van de medewerker in.');
-    if (!byId('company').value) errors.push('Kies een bedrijf.');
-    if (!byId('type').value) errors.push('Kies het type melding.');
-    if (!byId('date').value) errors.push('Vul de datum van de dienst in.');
-    if (!byId('replacement').value) errors.push('Geef aan of vervanging nodig is.');
-    const shift = calculateShift();
-    if (shift.error) errors.push(shift.error);
-    const text = byId('explanation').value.trim();
-    if (text.length < 10 || text.length > 250 || text.replace(/[^\p{L}\p{N}]/gu, '').length < 5) {
-      errors.push('Toelichting: 10–250 tekens, met een inhoudelijke beschrijving.');
-    }
-    if (!byId('phoneUnknown').checked) {
-      if (!byId('phone').value.trim()) errors.push('Vul een telefoonnummer in of kies Onbekend.');
-      else if (!isValidTelephone(byId('phone').value)) errors.push('Controleer het telefoonnummer (Nederlands of internationaal formaat).');
-    }
-    if (!byId('returnUnknown').checked && !byId('returnDate').value) errors.push('Vul de verwachte terugkeer in of kies Onbekend.');
-    const validation = byId('validation');
-    validation.className = errors.length ? 'error' : 'ok';
-    validation.textContent = errors.length ? errors.map(e => '• ' + e).join('\n')
-      : 'Invoervelden gecontroleerd. Klaar om te registreren.';
-    return errors.length === 0;
-  }
-
-  async function api(path, action, body = {}) {
-    const jwt = await t.jwt({state: JSON.stringify({action})});
-    const response = await fetch(backend + path, {
-      method:'POST',
-      headers: {'Authorization': 'Bearer ' + jwt, 'Content-Type':'application/json'},
-      body:JSON.stringify(body),
-      signal:AbortSignal.timeout(25000)
-    });
-    const result = await response.json();
-    if(!response.ok) throw new Error(result.error || 'Verbinding met PICKET mislukt');
-    return result;
-  }
-  async function bootstrap() {
-    try {
-      const result = await api('/api/bootstrap','picket-bootstrap');
-      const companies = result.companies || [];
-      if (!companies.length) throw new Error('Geen actieve bedrijven gevonden');
-      byId('company').replaceChildren(new Option('Bedrijf kiezen',''));
-      for (const name of companies) byId('company').add(new Option(name,name));
-      byId('company').disabled = false;
-      connected = true;
-      byId('submit').disabled = false;
-      byId('connection').textContent = 'PICKET is verbonden. Meldingen worden rechtstreeks op het PICKET-bord geregistreerd.';
-    } catch(error) {
-      connected = false;
-      byId('connection').textContent = 'Nog niet verbonden: ' + (error.message||error) + '. Opslaan blijft uitgeschakeld.';
-    }
-  }
-  async function searchMatches() {
-    const employee=byId('employee').value.trim();
-    const host=byId('matches'); host.replaceChildren();
-    if(!connected || employee.length<3) return;
-    try {
-      const result = await api('/api/matches','picket-matches',{employee});
-      for(const match of (result.matches||[])) {
-        const button=document.createElement('button');
-        button.type='button';
-        button.textContent = match.name + (match.archived?' · archief':' · actief');
-        button.addEventListener('click',()=>{
-          byId('employee').value=match.name;
-          relatedCardId=match.id;
-          for(const other of host.children) other.classList.remove('selected');
-          button.classList.add('selected');
-        });
-        host.appendChild(button);
-      }
-    } catch(error) { console.warn('Naamcontrole niet beschikbaar',error); }
-  }
-  byId('employee').addEventListener('input', ()=>{
-    relatedCardId='';
-    clearTimeout(debounceTimer);
-    debounceTimer=setTimeout(searchMatches,650);
-  });
-  byId('date').addEventListener('change', renderDuration);
-  byId('validate').addEventListener('click', validate);
-  byId('incident').addEventListener('submit', async event => {
-    event.preventDefault();
-    if(!connected || !validate()) return;
-    const shift = calculateShift();
-    const payload = {
-      submissionId, employee:byId('employee').value.trim(),
-      relatedCardId, company:byId('company').value,
-      type:byId('type').value, date:byId('date').value,
-      replacement:byId('replacement').value,
-      start:shift.start||'Onbekend', end:shift.end||'Onbekend',
-      explanation:byId('explanation').value.trim(),
-      phone:byId('phoneUnknown').checked?'Onbekend':byId('phone').value.trim(),
-      returnDate:byId('returnUnknown').checked?'Onbekend':byId('returnDate').value
-    };
-    byId('submit').disabled = true;
-    byId('validation').textContent = 'Melding registreren…';
-    try {
-      const result = await api('/api/submit','picket-submit',payload);
-      byId('validation').className = 'ok';
-      byId('validation').textContent = 'Melding geregistreerd (' + result.status + ').';
-      byId('validate').disabled = true;
-      await t.alert({message:'Melding opgeslagen in MELDINGEN | OPEN'});
-      // Avoid double-submission of sensitive personnel data.
-      setTimeout(() => t.closeModal(), 900);
-    } catch(error) {
-      byId('validation').className = 'error';
-      byId('validation').textContent = 'Opslaan niet bevestigd: ' + (error.message||error) + '. Controleer het PICKET-bord voordat je opnieuw probeert.';
-      byId('submit').disabled = false;
-    }
-  });
-  renderDuration();
-  bootstrap();
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nieuwe melding | PICKET</title><link rel="stylesheet" href="./style.css"></head><body>
+<h1>Nieuwe melding</h1><p>NKTR PICKET · Personeelsmelding registreren</p>
+<div id="connection" class="notice">Verbinding controleren…</div>
+<form id="incident" novalidate><div class="grid">
+ <div class="field wide"><label for="employee">Naam medewerker *</label><input id="employee" maxlength="80" required autocomplete="off" placeholder="Voor- en achternaam"><small>Vorige meldingen kunnen worden gekoppeld. Alleen PICKET, inclusief archief.</small><div id="matches"></div></div>
+ <div class="field"><label for="company">Bedrijf *</label><select id="company" disabled><option>Bedrijven laden…</option></select></div>
+ <div class="field"><label for="type">Type melding *</label><select id="type"><option value="">Kies type</option><option>Ziek</option><option>Te laat</option><option>No-show</option><option>Niet beschikbaar</option><option>Ongeval</option><option>Noodgeval</option><option>Overig</option></select></div>
+ <div class="field"><label for="date">Datum dienst *</label><input id="date" type="date" required></div>
+ <div class="field"><label for="replacement">Vervanging nodig? *</label><select id="replacement"><option value="">Kies Ja of Nee</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
+ <div class="field"><label>Begin dienst *</label><label><input id="startUnknown" type="checkbox" style="width:auto"> Onbekend</label><div style="display:flex;gap:7px"><select id="startHour" aria-label="Begin uur"></select><select id="startMinute" aria-label="Begin minuten"></select></div></div>
+ <div class="field"><label>Einde dienst *</label><label><input id="endUnknown" type="checkbox" style="width:auto"> Onbekend</label><div style="display:flex;gap:7px"><select id="endHour" aria-label="Eind uur"></select><select id="endMinute" aria-label="Eind minuten"></select></div></div>
+ <div id="duration" class="notice wide">Dienstduur nog niet beschikbaar.</div>
+ <div class="field wide"><label for="explanation">Toelichting (10–250 tekens) *</label><textarea id="explanation" maxlength="250" required placeholder="Wat is er gebeurd?"></textarea><small>Noteer geen diagnose of andere medische details. <span id="count">0/250</span></small></div>
+ <div class="field"><label for="phone">Telefoonnummer *</label><label><input type="checkbox" id="phoneUnknown" style="width:auto"> Onbekend</label><input id="phone" type="tel" placeholder="06 12345678"></div>
+ <div class="field"><label for="returnDate">Verwachte terugkeer *</label><label><input type="checkbox" id="returnUnknown" style="width:auto"> Onbekend</label><input id="returnDate" type="date"></div>
+</div><div class="actions"><button type="button" class="secondary" id="validate">CONTROLEER MELDING</button><button type="submit" id="submit" disabled>MELDING OPSLAAN</button></div><div id="validation" role="status" class="notice"></div></form>
+<script src="https://p.trellocdn.com/power-up.min.js"></script><script src="./common.js"></script><script>
+(async()=>{
+const t=window.TrelloPowerUp.iframe(),$=id=>document.getElementById(id),submissionId=crypto.randomUUID();let connected=false,relatedCardId='',matchTimer;
+const currentDate=new Date();$('date').value=[currentDate.getFullYear(),Picket.pad(currentDate.getMonth()+1),Picket.pad(currentDate.getDate())].join('-');
+for(const side of ['start','end']){
+ const hour=$(side+'Hour'),minute=$(side+'Minute');hour.add(new Option('Uur',''));minute.add(new Option('Min',''));
+ for(let i=0;i<24;i++)hour.add(new Option(Picket.pad(i),Picket.pad(i)));for(let i=0;i<60;i++)minute.add(new Option(Picket.pad(i),Picket.pad(i)));
+ $(side+'Unknown').addEventListener('change',()=>{hour.disabled=minute.disabled=$(side+'Unknown').checked;if(hour.disabled){hour.value='';minute.value=''}duration()});
+ hour.addEventListener('change',duration);minute.addEventListener('change',duration);
+}
+for(const x of ['phone','return'])$(x+'Unknown').addEventListener('change',()=>{const field=$(x==='phone'?'phone':'returnDate');field.disabled=$(x+'Unknown').checked;if(field.disabled)field.value=''});
+$('explanation').addEventListener('input',()=>Picket.text('count',$('explanation').value.length+'/250'));
+function times(side){if($(side+'Unknown').checked)return'Onbekend';const h=$(side+'Hour').value,m=$(side+'Minute').value;return h!==''&&m!==''?h+':'+m:null}
+function duration(){const a=times('start'),b=times('end');if(!a||!b){Picket.text('duration','Vul begin- en eindtijd in, of kies Onbekend.');return}if(a==='Onbekend'||b==='Onbekend'){Picket.text('duration','Dienstduur onbekend.');return}const n=(Number(b.slice(0,2))*60+Number(b.slice(3))-Number(a.slice(0,2))*60-Number(a.slice(3))+1440)%1440;Picket.text('duration',n?Math.floor(n/60)+' uur '+Picket.pad(n%60)+' min'+(b<a?' · eindigt volgende dag':''):'Begin- en eindtijd mogen niet gelijk zijn.')}
+function form(){return {submissionId,employee:$('employee').value.trim(),relatedCardId,company:$('company').value,type:$('type').value,date:$('date').value,replacement:$('replacement').value,start:times('start')||'',end:times('end')||'',explanation:$('explanation').value.trim(),phone:$('phoneUnknown').checked?'Onbekend':$('phone').value.trim(),returnDate:$('returnUnknown').checked?'Onbekend':$('returnDate').value}}
+function validate(){const x=form(),errors=[];if(x.employee.length<2)errors.push('Naam medewerker ontbreekt');if(!x.company)errors.push('Bedrijf ontbreekt');if(!x.type)errors.push('Type melding ontbreekt');if(!x.date)errors.push('Datum ontbreekt');if(!x.replacement)errors.push('Vervanging kiezen');if(!x.start||!x.end||x.start===x.end)errors.push('Diensttijden ongeldig');if(x.explanation.length<10||x.explanation.length>250)errors.push('Toelichting 10–250 tekens');if(!x.phone)errors.push('Telefoonnummer of Onbekend');if(!x.returnDate)errors.push('Terugkeerdatum of Onbekend');$('validation').className='notice '+(errors.length?'error':'success');Picket.text('validation',errors.length?errors.join(' · '):'Klaar om te registreren.');return errors.length===0}
+$('validate').addEventListener('click',validate);
+$('employee').addEventListener('input',()=>{relatedCardId='';clearTimeout(matchTimer);$('matches').replaceChildren();if($('employee').value.trim().length<3||!connected)return;matchTimer=setTimeout(async()=>{try{const x=await Picket.call(t,'/api/matches','picket-matches',{employee:$('employee').value});for(const m of x.matches||[]){const btn=Picket.node('button',m.name+(m.archived?' · archief':' · actief'),'secondary');btn.type='button';btn.addEventListener('click',()=>{$('employee').value=m.name;relatedCardId=m.id;$('matches').replaceChildren(Picket.node('small','Gekoppeld aan eerdere melding'))});$('matches').append(btn)}}catch{Picket.text('matches','Naamcontrole niet beschikbaar')}},650)});
+$('incident').addEventListener('submit',async(e)=>{e.preventDefault();if(!connected||!validate())return;$('submit').disabled=true;Picket.text('validation','Melding opslaan…');try{const res=await Picket.call(t,'/api/submit','picket-submit',form());Picket.text('validation','Melding opgeslagen: '+res.status);$('validation').className='notice success';$('validate').disabled=true;await t.alert({message:'Melding geregistreerd'});await t.closeModal()}catch(err){Picket.text('validation','Niet bevestigd: '+err.message+' Controleer het bord vóór opnieuw proberen.');$('validation').className='notice error';$('submit').disabled=false}});
+try{const r=await Picket.call(t,'/api/bootstrap','picket-bootstrap');$('company').replaceChildren(new Option('Kies bedrijf',''));for(const n of r.companies||[])$('company').add(new Option(n,n));if(!(r.companies||[]).length)throw Error('Geen actieve bedrijven');$('company').disabled=false;connected=true;$('submit').disabled=false;Picket.text('connection',r.sync?.issues?.length?'Verbonden · Controleer bedrijfssynchronisatie: '+r.sync.issues.join('; '):'PICKET verbonden · Actieve bedrijven geladen')}catch(err){Picket.text('connection','Niet verbonden: '+err.message)}duration();
 })();
-</script>
-</body>
-</html>
+</script></body></html>
