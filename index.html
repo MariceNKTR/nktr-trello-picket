@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>NKTR PICKET Power-Up | P1A</title>
+  <title>NKTR PICKET Power-Up | P1B</title>
 </head>
 <body>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script>
 'use strict';
-/* PICKET P1A: robust capability registration.
+/* PICKET P1B: robust capability registration.
  * Trello shows these buttons only to board editors (condition: edit).
  * The Cloudflare Worker separately verifies current membership + signed JWT.
  * Avoid asynchronous t.card lookups and client permission prechecks in the
@@ -34,6 +34,7 @@ window.TrelloPowerUp.initialize({
     // employee card, and rejects invalid actions without modifying the card.
     return [
       { text: 'Bedrijf instellen', condition: 'edit', callback: () => openPicket(t, 'bedrijf.html', 'Bedrijf instellen', 430) },
+      { text: 'Kaart koppelen', condition: 'edit', callback: () => openPicket(t, 'koppelen.html', 'Bestaande kaart koppelen', 660) },
       { text: 'In behandeling nemen', condition: 'edit', callback: () => openPicket(t, 'status.html?mode=claim', 'In behandeling nemen', 465) },
       { text: 'Afhandelen', condition: 'edit', callback: () => openPicket(t, 'status.html?mode=close', 'Melding afhandelen', 570) }
     ];

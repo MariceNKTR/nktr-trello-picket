@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKET | Bestaande kaart koppelen</title><link rel="stylesheet" href="./style.css"></head>
+<body>
+<h1>Bestaande kaart koppelen</h1>
+<p>Voor kaarten die rechtstreeks in Trello zijn gemaakt. PICKET zal niets aanpassen in Onboarding.</p>
+<div class="notice" id="connection">Kaart controleren…</div>
+<form id="adopt" hidden novalidate>
+  <div class="grid">
+    <div class="field wide"><label for="person">Medewerker op deze Trello-kaart *</label>
+      <input id="person" maxlength="80" autocomplete="off" readonly>
+      <small id="identityStatus">Onboarding wordt doorzocht, inclusief archief.</small>
+      <div id="onbMatches" class="match-list"></div>
+      <small>Als de naam onjuist is, sluit dit formulier en hernoem eerst de Trello-kaart.</small>
+    </div>
+    <div class="field"><label for="kind">Dit is een… *</label><select id="kind">
+      <option value="medewerker">Medewerkerkaart zonder incident</option>
+      <option value="melding">Bestaande incidentmelding</option>
+    </select></div>
+    <div class="field"><label for="company">Bedrijf (optioneel)</label><select id="company" disabled><option>Bedrijven laden…</option></select>
+      <small>Niet geselecteerd = MELDINGEN | OPEN en BEDRIJF KIEZEN.</small></div>
+    <div class="wide" id="incidentFields" hidden>
+      <p>Vul de ontbrekende incidentgegevens in. PICKET behoudt de oorspronkelijke kaartbeschrijving.</p>
+      <div class="grid">
+        <div class="field"><label for="type">Type melding *</label><select id="type"><option value="">Kies type</option><option>Ziek</option><option>Te laat</option><option>No-show</option><option>Niet beschikbaar</option><option>Ongeval</option><option>Noodgeval</option><option>Overig</option></select></div>
+        <div class="field"><label for="date">Datum dienst *</label><input id="date" type="date"></div>
+        <div class="field"><label for="replacement">Vervanging nodig? *</label><select id="replacement"><option value="">Maak een keuze</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
+        <div class="field"><label>Diensttijden</label><input value="Onbekend (later aanvullen indien beschikbaar)" readonly></div>
+        <div class="field wide"><label for="explanation">Toelichting *</label><textarea id="explanation" maxlength="250" placeholder="Beschrijf de gebeurtenis zonder medische diagnose."></textarea><small>10–250 tekens, minimaal vijf letters of cijfers.</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions"><button id="save" type="submit">KAART KOPPELEN</button></div>
+  <div class="notice" id="message" role="status"></div>
+</form>
+<script src="https://p.trellocdn.com/power-up.min.js"></script><script src="./common.js"></script>
+<script>
+(async()=>{
+const t=window.TrelloPowerUp.iframe(),$=id=>document.getElementById(id);
+let cardId='',name='',picker=null;
+$('kind').addEventListener('change',()=>{$('incidentFields').hidden=$('kind').value!=='melding'});
+const today=new Date();$('date').value=[today.getFullYear(),Picket.pad(today.getMonth()+1),Picket.pad(today.getDate())].join('-');
+try{
+  const card=await t.card('id','name');cardId=card.id;
+  const [preview,boot]=await Promise.all([
+    Picket.call(t,'/api/adopt-preview','picket-adopt-preview',{cardId}),
+    Picket.call(t,'/api/bootstrap','picket-bootstrap')
+  ]);
+  if(preview.already){Picket.text('connection','Deze kaart is al gekoppeld als '+preview.kind+'. Geen extra kaart aangemaakt.');return}
+  name=preview.name;$('person').value=name;
+  $('company').replaceChildren(new Option('Geen bedrijf gekozen',''));
+  for(const c of boot.companies||[])$('company').add(new Option(c,c));
+  $('company').value=preview.company||'';$('company').disabled=false;
+  picker=Picket.employeePicker(t,$('person'),$('onbMatches'),$('identityStatus'));
+  // The input is read-only, but direct input event starts the existing identity lookup.
+  $('person').dispatchEvent(new Event('input'));
+  Picket.text('connection','Klaar om de bestaande kaart te koppelen. Controleer de medewerkerkeuze.');
+  $('adopt').hidden=false;
+}catch(e){Picket.text('connection','Koppelen niet mogelijk: '+e.message);return}
+$('adopt').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const kind=$('kind').value;
+  const data={cardId,kind,company:$('company').value,onbEmployeeId:picker.selectedId(),relatedCardId:picker.relatedId()};
+  if(kind==='melding'){
+    data.type=$('type').value;data.date=$('date').value;data.replacement=$('replacement').value;
+    data.explanation=$('explanation').value.trim();data.start='Onbekend';data.end='Onbekend';
+    if(!data.type||!data.date||!data.replacement||data.explanation.length<10){Picket.text('message','Vul alle verplichte meldingsvelden in.');return}
+  }
+  $('save').disabled=true;Picket.text('message','Kaart koppelen…');
+  try{const result=await Picket.call(t,'/api/adopt-card','picket-adopt-card',data);
+    const warning=result.description_synced?'':' Controleer de kaartbeschrijving: aanvulling niet bevestigd.';
+    Picket.text('message','Gekoppeld: '+result.kind+'. '+(result.new_name?'Nieuwe naam gemarkeerd.':'')+warning);
+    await t.alert({message:result.description_synced?'Kaart gekoppeld aan PICKET':'Kaart gekoppeld. Controleer beschrijving.'});await t.closeModal();
+  }catch(e){Picket.text('message','Niet bevestigd: '+e.message+'. Controleer eerst de kaart.');$('save').disabled=false}
+});
+})();
+</script>
+</body></html>

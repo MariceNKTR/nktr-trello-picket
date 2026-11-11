@@ -1,0 +1,9 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKET | Bedrijf instellen</title><link rel="stylesheet" href="./style.css"></head><body>
+<h1>Bedrijf instellen</h1><p id="cardname">Kaart laden…</p><div class="notice" id="current">Gegevens ophalen…</div>
+<div class="field"><label for="company">Bedrijf</label><select id="company" disabled><option>Bedrijven laden…</option></select><small>Geen bedrijf: verplaatsen naar MELDINGEN | OPEN met BEDRIJF KIEZEN.</small></div>
+<div class="actions"><button id="save" disabled>BEDRIJF OPSLAAN</button></div><div class="notice" id="message" role="status"></div>
+<script src="https://p.trellocdn.com/power-up.min.js"></script><script src="./common.js"></script><script>
+(async()=>{const t=TrelloPowerUp.iframe(),$=id=>document.getElementById(id);let card;try{card=await t.card('id','name');Picket.text('cardname',card.name);const [details,boot]=await Promise.all([Picket.call(t,'/api/card-status','picket-card-status',{cardId:card.id}),Picket.call(t,'/api/bootstrap','picket-bootstrap')]);$('company').replaceChildren(new Option('Geen bedrijf kiezen',''));for(const c of boot.companies||[])$('company').add(new Option(c,c));$('company').value=details.company||'';$('company').disabled=false;$('save').disabled=false;Picket.text('current','Huidig bedrijf: '+(details.company||'Nog niet gekozen'))}catch(e){Picket.text('message','Niet beschikbaar: '+e.message);return}
+$('save').addEventListener('click',async()=>{$('save').disabled=true;try{const res=await Picket.call(t,'/api/company','picket-company',{cardId:card.id,company:$('company').value});Picket.text('message','Opgeslagen: '+(res.company||'BEDRIJF KIEZEN'));await t.alert({message:'PICKET bedrijf bijgewerkt'});await t.closeModal()}catch(e){Picket.text('message','Niet bevestigd: '+e.message);$('save').disabled=false}});
+})();
+</script></body></html>

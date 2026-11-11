@@ -15,3 +15,8 @@ button.secondary{background:var(--bg);color:var(--fg)}button.link{background:tra
 .table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--line);text-align:left;padding:10px 6px}.table th{color:var(--muted);font-size:12px}
 .pill{padding:4px 9px;background:var(--surface);border-radius:50px;display:inline-block}a{color:var(--accent)}
 @media(max-width:620px){body{padding:14px}.grid,.metrics{grid-template-columns:1fr}.wide{grid-column:auto}}
+/* RC3 employee identity choices and compact form controls */
+.match-list{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 10px}
+.match-list .match{font-size:12px;text-align:left;max-width:100%}
+.check{width:auto;vertical-align:middle}
+.time-row{display:flex;gap:7px}.time-row select{min-width:0}
