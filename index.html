@@ -1,25 +1,44 @@
-<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>NKTR PICKET Power-Up</title></head><body>
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NKTR PICKET Power-Up | P1A</title>
+</head>
+<body>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script>
 'use strict';
-// Connector page. Enable board-buttons and card-buttons for this Power-Up in Trello admin.
-const light='./icon-light.svg',dark='./icon-dark.svg',icon='./icon-gray.svg';
+/* PICKET P1A: robust capability registration.
+ * Trello shows these buttons only to board editors (condition: edit).
+ * The Cloudflare Worker separately verifies current membership + signed JWT.
+ * Avoid asynchronous t.card lookups and client permission prechecks in the
+ * capability callback: those checks could suppress all card actions.
+ * Intentionally omit optional icon assets until live icon URLs are verified;
+ * this prevents the broken-image placeholders reported by the client.
+ */
+const PICKET_ROOT = 'https://maricenktr.github.io/nktr-trello-picket/';
+const openPicket = (t, file, title, height, fullscreen = false) =>
+  t.modal({ url: PICKET_ROOT + file, title, height, fullscreen });
 window.TrelloPowerUp.initialize({
-  'board-buttons': function(t){
+  'board-buttons': function (t) {
     return [
-      {text:'+ MELDING',icon:{dark,light},condition:'edit',callback:()=>t.modal({url:'./melding.html',height:690,fullscreen:false,title:'Nieuwe melding'})},
-      {text:'INZICHTEN',icon:{dark,light},condition:'edit',callback:()=>t.modal({url:'./dashboard.html',height:770,fullscreen:true,title:'PICKET | Inzichten'})}
+      { text: '+ MELDING', condition: 'edit', callback: () => openPicket(t, 'melding.html', 'Nieuwe melding', 690) },
+      { text: '+ MEDEWERKER', condition: 'edit', callback: () => openPicket(t, 'medewerker.html', 'Medewerker toevoegen', 520) },
+      { text: 'INZICHTEN', condition: 'edit', callback: () => openPicket(t, 'dashboard.html', 'PICKET | Inzichten', 770, true) }
     ];
   },
-  'card-buttons': function(t){
-    if(!t.memberCanWriteToModel('card'))return [];
-    return t.card('name').then(({name})=>{
-      if(/^(?:🔒|──|↓↓)/.test(name||'')||name==='MELDING MAKEN')return [];
-      return [
-        {text:'In behandeling nemen',icon,condition:'edit',callback:()=>t.modal({url:'./status.html?mode=claim',height:465,title:'In behandeling nemen'})},
-        {text:'Afhandelen',icon,condition:'edit',callback:()=>t.modal({url:'./status.html?mode=close',height:570,title:'Melding afhandelen'})}
-      ];
-    });
+  'card-buttons': function (t) {
+    // Respond immediately: Trello times out slow capability handlers.
+    // The backend determines whether the selected card is an incident or an
+    // employee card, and rejects invalid actions without modifying the card.
+    return [
+      { text: 'Bedrijf instellen', condition: 'edit', callback: () => openPicket(t, 'bedrijf.html', 'Bedrijf instellen', 430) },
+      { text: 'In behandeling nemen', condition: 'edit', callback: () => openPicket(t, 'status.html?mode=claim', 'In behandeling nemen', 465) },
+      { text: 'Afhandelen', condition: 'edit', callback: () => openPicket(t, 'status.html?mode=close', 'Melding afhandelen', 570) }
+    ];
   }
 });
-</script></body></html>
+</script>
+</body>
+</html>
